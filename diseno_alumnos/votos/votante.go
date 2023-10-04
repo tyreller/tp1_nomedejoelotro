@@ -3,9 +3,9 @@ package votos
 type TipoVoto int
 
 const (
-	PRESIDENTE TipoVoto = iota
-	GOBERNADOR
-	INTENDENTE
+	PRESIDENTE TipoVoto = 0
+	GOBERNADOR TipoVoto = 1
+	INTENDENTE TipoVoto = 2
 )
 
 const (

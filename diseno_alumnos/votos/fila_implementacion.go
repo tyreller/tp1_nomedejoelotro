@@ -16,8 +16,8 @@ func CrearColaEnlazada[T any]() Cola[T] {
 	return &colaEnlazada[T]{nil, nil}
 }
 
-func crearNodo[T any](persona votanteImplementacion) *nodoCola[T] {
-	return &nodoCola[T]{persona, nil}
+func crearNodo[T any](votante votanteImplementacion) *nodoCola[T] {
+	return &nodoCola[T]{votante, nil}
 }
 
 func (c *colaEnlazada[T]) EstaVacia() bool {
@@ -28,7 +28,7 @@ func (c *colaEnlazada[T]) VerPrimero() T {
 	if c.EstaVacia() {
 		panic("La cola esta vacia")
 	}
-	return c.primero.persona.dni
+	return c.primero.votante.dni
 }
 
 func (c *colaEnlazada[T]) Encolar(dato T) {
