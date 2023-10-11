@@ -4,6 +4,7 @@ import "fmt"
 
 type ErrorLeerArchivo struct{}
 
+
 func (e ErrorLeerArchivo) Error() string {
 	return "ERROR: Lectura de archivos"
 }
@@ -27,6 +28,7 @@ func (e DNIFueraPadron) Error() string {
 }
 
 type FilaVacia struct{}
+
 
 func (e FilaVacia) Error() string {
 	return "ERROR: Fila vacía"
@@ -53,6 +55,7 @@ func (e ErrorAlternativaInvalida) Error() string {
 }
 
 type ErrorNoHayVotosAnteriores struct{}
+
 
 func (e ErrorNoHayVotosAnteriores) Error() string {
 	return "ERROR: Sin voto a deshacer"
