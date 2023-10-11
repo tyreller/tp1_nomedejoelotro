@@ -8,17 +8,18 @@ type partidoImplementacion struct {
 }
 
 type partidoEnBlanco struct {
-	tipoVoto TipoVoto
-	cantidadVotos [3]TipoVoto
+	NumeroLista int
+	candidatos [CANT_VOTACION] string
 }
 
 func CrearPartido(nombre string, numero int,candidatos [CANT_VOTACION]string) Partido {
 	return &partidoImplementacion{nombre,numero, candidatos}
 }
 
-//func CrearVotosEnBlanco() Partido {
-//	return &partidoEnBlanco{0, 0}
-//}
+func CrearVotosEnBlanco() Partido {
+	var listado = [3]string{"Presidente", "Gobernador", "Intendente"}
+	return &partidoEnBlanco{0,listado}
+}
 
 func (partido *partidoImplementacion) VotadoPara(tipo TipoVoto) {
 	return
