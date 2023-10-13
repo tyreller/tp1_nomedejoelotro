@@ -1,47 +1,48 @@
 package votos
-
+import "strconv"
 type partidoImplementacion struct {
 	nombre string
 	NumeroLista int
 	candidatos [CANT_VOTACION] string
+	votos [CANT_VOTACION]int
 
 }
+
+
 
 type partidoEnBlanco struct {
 	NumeroLista int
 	candidatos [CANT_VOTACION] string
+	votos [CANT_VOTACION]int
 }
 
-func CrearPartido(nombre string, numero int,candidatos [CANT_VOTACION]string) Partido {
-	return &partidoImplementacion{nombre,numero, candidatos}
+func CrearPartido(nombre string, numero int,candidatos [CANT_VOTACION]string, votos [CANT_VOTACION]int) Partido {
+	return &partidoImplementacion{nombre,numero, candidatos,votos}
 }
 
 func CrearVotosEnBlanco() Partido {
 	var listado = [3]string{"Presidente", "Gobernador", "Intendente"}
-	return &partidoEnBlanco{0,listado}
+	var votos = [3]int{0,0,0}
+	return &partidoEnBlanco{0,listado,votos}
 }
 
 func (partido *partidoImplementacion) VotadoPara(tipo TipoVoto) {
+	partido.votos[tipo]++
 	return
 }
 
+
 func (partido partidoImplementacion) ObtenerResultado(tipo TipoVoto) string {
-	//stringReturn := "Votos del Partido " + partido.nombre + ".\n"
-	//stringReturn += stringReturn + "Resultados Presidente: " + partido.cantidadVotos[PRESIDENTE] + " votos.\n"
-	//stringReturn += stringReturn + "Resultados Gobernador: " + partido.cantidadVotos[GOBERNADOR] + " votos.\n"
-	//stringReturn += stringReturn + "Resultados Intendente: " + partido.cantidadVotos[INTENDENTE] + " votos.\n"
-	return "a"//stringReturn
+	stringReturn := partido.nombre + "- Postulante :" + partido.candidatos[tipo] + "-"+ strconv.Itoa(partido.votos[tipo]) + "votos"
+	return stringReturn
 }
 
 func (blanco *partidoEnBlanco) VotadoPara(tipo TipoVoto) {
+	blanco.votos[tipo]++
 	return
-	//*blanco.cantidadVotos[tipo]++
 }
 
 func (blanco partidoEnBlanco) ObtenerResultado(tipo TipoVoto) string {
-	//stringReturn := "Votos en Blanco " + partido.nombre + ".\n"
-	//stringReturn += stringReturn + "Resultados Presidente: " + blanco.cantidadVotos[PRESIDENTE] + " votos.\n"
-	//stringReturn += stringReturn + "Resultados Gobernador: " + blanco.cantidadVotos[GOBERNADOR] + " votos.\n"
-	//stringReturn += stringReturn + "Resultados Intendente: " + blanco.cantidadVotos[INTENDENTE] + " votos.\n"
-	return ""
+	stringReturn := "Votos en Blanco: " + strconv.Itoa(partido.votos[tipo]) + "votos"
+	return stringReturn
 }
