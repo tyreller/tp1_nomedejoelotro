@@ -5,10 +5,7 @@ type partidoImplementacion struct {
 	NumeroLista int
 	candidatos [CANT_VOTACION] string
 	votos [CANT_VOTACION]int
-
 }
-
-
 
 type partidoEnBlanco struct {
 	NumeroLista int
@@ -43,6 +40,6 @@ func (blanco *partidoEnBlanco) VotadoPara(tipo TipoVoto) {
 }
 
 func (blanco partidoEnBlanco) ObtenerResultado(tipo TipoVoto) string {
-	stringReturn := "Votos en Blanco: " + strconv.Itoa(partido.votos[tipo]) + "votos"
+	stringReturn := "Votos en Blanco: " + strconv.Itoa(blanco.votos[tipo]) + "votos"
 	return stringReturn
 }

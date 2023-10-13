@@ -8,12 +8,15 @@ import (
 type votanteImplementacion struct {
 	dni int
 	votoFinalizado bool
-	votos[] int 
+	iteraciones int	
+	votosLista[] int
+	votosTipo[] TipoVoto
+	impugnado bool
 }
 
 
 func CrearVotante(dni int) Votante {
-	return &votanteImplementacion{dni, false,[]int{} }
+	return &votanteImplementacion{dni, false,0,[]int{},[]TipoVoto{},false}
 }
 
 func (votante votanteImplementacion) LeerDNI() int {
@@ -22,17 +25,21 @@ func (votante votanteImplementacion) LeerDNI() int {
 
 func (votante *votanteImplementacion) Votar(tipo TipoVoto, alternativa int) error {
 		if  votante.votoFinalizado{
-			dni:= votante.dni
+			dni := votante.dni
 			err := errores.ErrorVotanteFraudulento{dni}
-	
 			return err
 		}
-		votante.votos = append(votante.votos,alternativa)
+		if alternativa == 0{
+			votante.impugnado = true
+		}
+		votante.votosLista= append(votante.votosLista,alternativa)
+		votante.votosTipo= append(votante.votosTipo,tipo)
+		votante.iteraciones++
 		return nil
 }
 
 func (votante *votanteImplementacion) Deshacer() error {
-	if len(votante.votos) == 0{
+	if votante.iteraciones == 0{
 		err := errores.ErrorNoHayVotosAnteriores{}
 		return err
 	}else if  votante.votoFinalizado{
@@ -40,11 +47,21 @@ func (votante *votanteImplementacion) Deshacer() error {
 		err := errores.ErrorVotanteFraudulento{dni}
 		return err
 	}
-	votante.votos = votante.votos[:len(votante.votos)-1]
-		return nil
+	votante.votosLista = votante.votosLista[:len(votante.votosLista)-1]
+	votante.votosTipo = votante.votosTipo[:len(votante.votosTipo)-1]
+
+	votante.iteraciones --
+	return nil
 }
 
 func (votante *votanteImplementacion) FinVoto() (Voto, error) {
-	return Voto{}, nil
+	if votante.votoFinalizado{
+		dni:= votante.dni
+		err := errores.ErrorVotanteFraudulento{dni}
+		return Voto{[CANT_VOTACION]int{0,0,0},votante.impugnado},err
+	}
+	votante.votoFinalizado = true
+	
+	return Voto{[CANT_VOTACION]int{0,0,0},votante.impugnado}, nil
 }
 

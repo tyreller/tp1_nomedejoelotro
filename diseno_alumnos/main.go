@@ -4,8 +4,6 @@ import (
 	"bufio"
 	"fmt"
 	"os"
-	"os/signal"
-	"syscall"
 	"rerepolez/cola"
 	"rerepolez/errores"
 	"rerepolez/lista"
@@ -14,20 +12,24 @@ import (
 	"strings"
 )
 
-// Implementacion de una lista enlazada para guardar  el padron.
+// Implementacion de una lista enlazada para guardar el padron.
 var listaVotantes lista.Lista[votos.Votante]
 
 // Implementacion de un arreglo  para guardar los partidos
 var arregloDePartidos []votos.Partido
+
+
 //Implementacion de 1 cola para el orden en que se ingresan los votantes.
 var colaVotantes cola.Cola[votos.Votante]
+
+var votosImpugnados = 0
 
 // Detecta un error si falta parametros al comenzar
 func detectarErrorParametro(parametros []string, cantidadParametros int) bool {
 	if len(parametros) != cantidadParametros {
 		error := errores.ErrorParametros{}
 
-		fmt.Println(error)
+		fmt.Println(error.Error())
 		return true
 	}
 	return false
@@ -59,10 +61,8 @@ func lecturaDePadron(archivo string) bool {
 			break
 		}
 		linea = strings.TrimSuffix(linea, "\n")
-
 		dni, _ := strconv.Atoi(linea)
 		votante := votos.CrearVotante(dni)
-
 		listaVotantes.InsertarUltimo(votante)
 	}
 	return true
@@ -77,21 +77,18 @@ func lecturaDeBoletas(archivo string) bool {
 	}
 	lector := bufio.NewReader(archivoAbierto)
 	contador := 1
-	votosEnBlanco:= votos.CrearVotosEnBlanco()
-	arregloDePartidos = append(arregloDePartidos,votosEnBlanco)
 	for {
-
 		linea, err := lector.ReadString('\n')
 		if err != nil {
 			break
 		}
 		partidoArreglo := strings.Split(linea, ",")
 		nombrePartido := partidoArreglo[0]
-		var candidatos [3]string
-		candidatos[0] = partidoArreglo[1]
-		candidatos[1] = partidoArreglo[2]
-		candidatos[2] = partidoArreglo[3]
-		partido := votos.CrearPartido(nombrePartido, contador, candidatos,[3]int{0, 0, 0})
+		var candidatos [votos.CANT_VOTACION]string
+		candidatos[votos.PRESIDENTE] = partidoArreglo[1]
+		candidatos[votos.GOBERNADOR] = partidoArreglo[2]
+		candidatos[votos.INTENDENTE] = partidoArreglo[3]
+		partido := votos.CrearPartido(nombrePartido, contador, candidatos,[votos.CANT_VOTACION]int{0, 0, 0})
 		contador++
 		arregloDePartidos = append(arregloDePartidos,partido)
 
@@ -126,7 +123,7 @@ func ingresar(dni int) {
 	}
 	colaVotantes.Encolar(votante)
 	fmt.Println("OK")
-	return
+	
 }
 
 //Verificacion de Error de ingreso del comando votar
@@ -151,11 +148,11 @@ func verificarErroresVotacion(tipoVoto string, numeroLista int) bool{
 //Tranasfoma la palabra del tipoVoto a un numero.
 func transformarTipoVoto(tipoVoto string) votos.TipoVoto{
 	if tipoVoto == "presidente"{
-		return 0
+		return votos.PRESIDENTE	//0
 	}else if tipoVoto == "gobernador"{
-		return 1
+		return votos.GOBERNADOR	//1
 	}else{
-		return 2
+		return votos.INTENDENTE	//2
 	}
 }
 
@@ -171,7 +168,6 @@ func votar(numeroLista int, tipoVoto string){
 	}
 	partido.VotadoPara(tipo)
 	fmt.Println("OK")
-	return
 }
 
 func deshacer(){
@@ -197,9 +193,31 @@ func imprimirResltador(){
 		partido.ObtenerResultado(3)
 	}
 
-	fmt.Println("Votos impugnados")
+	fmt.Printf("Votos impugnados: %d\n", votosImpugnados)
 }
 
+func finVoto(numeroLista int, tipoVoto votos.TipoVoto){
+	
+	//Checkea que el DNI no sea Fraudulento (Dentro de func)
+	//Checkea que la fila no este vacia (Fuera de func)
+	//Suma los votos a partidos a partidos correspondientes
+	//Suma votos en blanco
+	//Desencola al votante
+	//for i:= 0; i<len(votosTipo);i++{
+	//	arregloDePartidos[votosLista[i]].VotadoPara(votosTipo[i])
+	//}
+		
+}
+
+
+func detectarErrorFin()bool{
+	if colaVotantes.EstaVacia(){
+		err:= errores.FilaVacia{}
+		fmt.Println(err.Error())
+		return true
+	}
+	return false
+}
 func main() {
 	params := os.Args[1:]
 	listaVotantes = lista.CrearListaEnlazada[votos.Votante]()
@@ -212,17 +230,21 @@ func main() {
 	if !lecturaDePadron(params[1]) {
 		return
 	}
-
+	//votosEnBlanco:= votos.CrearVotosEnBlanco()
+	
 	colaVotantes = cola.CrearColaEnlazada[votos.Votante]()
 	//Usamos esta forma, ya que es la que encontramos por internet. El fmt.Scan() nos estaba generando problemas con separar por ejemplo el ingresar <dni> en 2 .
 	escanerInput := bufio.NewScanner(os.Stdin)
 	var parametro string
+	var votosLista[] int
+	var votosTipo[] votos.TipoVoto
 
 	for true {
 		escanerInput.Scan()
 		parametro = escanerInput.Text()
 		parametroSeparado := strings.Fields(parametro)
 		comando := parametroSeparado[0]
+		
 
 		switch strings.ToLower(comando) {
 		case "ingresar":
@@ -233,10 +255,26 @@ func main() {
 			tipoVoto := parametroSeparado[1]
 			numeroLista, _ := strconv.Atoi(parametroSeparado[2])
 			if verificarErroresVotacion(tipoVoto, numeroLista) {
-				votar(numeroLista, tipoVoto)
+				if numeroLista == 0{
+					votosImpugnados++
+					fmt.Println("OK")
+				}else {
+					votar(numeroLista, tipoVoto)
+					votosLista= append(votosLista,numeroLista)
+					votosTipo= append(votosTipo,transformarTipoVoto(tipoVoto ))
+				}
 			}
 		case "deshacer":
 			deshacer()
+			votosLista = votosLista[:len(votosLista)-1]
+			votosTipo = votosTipo[:len(votosTipo)-1]
+		case "fin-votar":
+			if !detectarErrorFin(){
+				finVoto(votosLista[len(votosLista)-1], votosTipo[len(votosTipo)-1])
+				votosTipo = votosTipo[:0]
+				votosLista = votosLista[:0]
+				colaVotantes.Desencolar()
+			}
 		}
 	}
 }
@@ -244,8 +282,7 @@ func main() {
 /*
 FALTA:
 
-	Aclaracion: En Votar, el 0 es el partido blanco. Tiene que ser los votos impugnados. Hay que arreglarlo !
-	
+	Aclaracion: Hay que crear partido en blanco
 	FUNCION DE VOTAR (Casi terminada. Solo falta que cuando vota 2 veces en la misma categoria, se borre el primero y quede el segundo)
 	FUNCION DE DESHACER (Esten hechos los errores. Falta desarrollar)
 	FUNCION DE Fin Votar
