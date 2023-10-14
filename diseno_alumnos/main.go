@@ -18,11 +18,8 @@ var listaVotantes lista.Lista[votos.Votante]
 // Implementacion de un arreglo  para guardar los partidos
 var arregloDePartidos []votos.Partido
 
-
 //Implementacion de 1 cola para el orden en que se ingresan los votantes.
 var colaVotantes cola.Cola[votos.Votante]
-
-var votosImpugnados = 0
 
 // Detecta un error si falta parametros al comenzar
 func detectarErrorParametro(parametros []string, cantidadParametros int) bool {
@@ -76,6 +73,8 @@ func lecturaDeBoletas(archivo string) bool {
 		return false
 	}
 	lector := bufio.NewReader(archivoAbierto)
+	partidoNulo := votos.CrearPartido("",votos.LISTA_IMPUGNA,[votos.CANT_VOTACION]string{"","",""},[votos.CANT_VOTACION]int{votos.LISTA_IMPUGNA,votos.LISTA_IMPUGNA,votos.LISTA_IMPUGNA})
+	arregloDePartidos = append(arregloDePartidos,partidoNulo)
 	contador := 1
 	for {
 		linea, err := lector.ReadString('\n')
@@ -160,13 +159,11 @@ func transformarTipoVoto(tipoVoto string) votos.TipoVoto{
 func votar(numeroLista int, tipoVoto string){
 	tipo:= transformarTipoVoto(tipoVoto)
 	persona:= colaVotantes.VerPrimero()
-	partido:= arregloDePartidos[numeroLista]
 	err:= persona.Votar(tipo,numeroLista)
 	if err != nil{
 		fmt.Println(err.Error())
 		return
 	}
-	partido.VotadoPara(tipo)
 	fmt.Println("OK")
 }
 
@@ -177,36 +174,37 @@ func deshacer(){
 		fmt.Println(err.Error())
 		return
 	}
+	fmt.Println("OK")
+	return
 }
 
 func imprimirResltador(){
 	fmt.Println("Presidente:")
 	for _,partido:= range arregloDePartidos{
-		partido.ObtenerResultado(0)
+		fmt.Println(partido.ObtenerResultado(votos.PRESIDENTE))
 	}
-	fmt.Println("Gobernador:")
+	fmt.Println("\nGobernador:")
 	for _,partido:= range arregloDePartidos{
-		partido.ObtenerResultado(0)
+		fmt.Println(partido.ObtenerResultado(votos.GOBERNADOR))
 	}
-	fmt.Println("Intendente:")
+	fmt.Println("\nIntendente:")
 	for _,partido:= range arregloDePartidos{
-		partido.ObtenerResultado(3)
+		fmt.Println(partido.ObtenerResultado(votos.INTENDENTE))
 	}
-
 	fmt.Printf("Votos impugnados: %d\n", votosImpugnados)
 }
 
-func finVoto(numeroLista int, tipoVoto votos.TipoVoto){
-	
-	//Checkea que el DNI no sea Fraudulento (Dentro de func)
-	//Checkea que la fila no este vacia (Fuera de func)
-	//Suma los votos a partidos a partidos correspondientes
-	//Suma votos en blanco
-	//Desencola al votante
-	//for i:= 0; i<len(votosTipo);i++{
-	//	arregloDePartidos[votosLista[i]].VotadoPara(votosTipo[i])
-	//}
-		
+func finVoto(votante votos.Votante){
+	voto,posibleError := votante.FinVoto()
+	if posibleError == nil && !voto.Impugnado{
+		cantidadCandidatos := 3
+		for i:=0; i< cantidadCandidatos;i++{
+			if voto.VotoPorTipo[i] != 0{
+				arregloDePartidos[voto.VotoPorTipo[i]].VotadoPara(votos.TipoVoto(i))
+			}
+		}
+	}
+	imprimirResltador()
 }
 
 
@@ -218,6 +216,7 @@ func detectarErrorFin()bool{
 	}
 	return false
 }
+
 func main() {
 	params := os.Args[1:]
 	listaVotantes = lista.CrearListaEnlazada[votos.Votante]()
@@ -236,8 +235,6 @@ func main() {
 	//Usamos esta forma, ya que es la que encontramos por internet. El fmt.Scan() nos estaba generando problemas con separar por ejemplo el ingresar <dni> en 2 .
 	escanerInput := bufio.NewScanner(os.Stdin)
 	var parametro string
-	var votosLista[] int
-	var votosTipo[] votos.TipoVoto
 
 	for true {
 		escanerInput.Scan()
@@ -257,22 +254,15 @@ func main() {
 			if verificarErroresVotacion(tipoVoto, numeroLista) {
 				if numeroLista == 0{
 					votosImpugnados++
-					fmt.Println("OK")
-				}else {
-					votar(numeroLista, tipoVoto)
-					votosLista= append(votosLista,numeroLista)
-					votosTipo= append(votosTipo,transformarTipoVoto(tipoVoto ))
 				}
+				votar(numeroLista, tipoVoto)
 			}
 		case "deshacer":
 			deshacer()
-			votosLista = votosLista[:len(votosLista)-1]
-			votosTipo = votosTipo[:len(votosTipo)-1]
 		case "fin-votar":
 			if !detectarErrorFin(){
-				finVoto(votosLista[len(votosLista)-1], votosTipo[len(votosTipo)-1])
-				votosTipo = votosTipo[:0]
-				votosLista = votosLista[:0]
+				votante := colaVotantes.VerPrimero()
+				finVoto(votante)
 				colaVotantes.Desencolar()
 			}
 		}
@@ -283,6 +273,7 @@ func main() {
 FALTA:
 
 	Aclaracion: Hay que crear partido en blanco
+
 	FUNCION DE VOTAR (Casi terminada. Solo falta que cuando vota 2 veces en la misma categoria, se borre el primero y quede el segundo)
 	FUNCION DE DESHACER (Esten hechos los errores. Falta desarrollar)
 	FUNCION DE Fin Votar

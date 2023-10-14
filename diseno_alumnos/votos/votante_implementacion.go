@@ -2,21 +2,29 @@ package votos
 
 import (
 	"rerepolez/errores"
+	"rerepolez/pila"
 )
 
-
+var votosImpugnados = 0
+//Implementacion de pila para guardar los votos del votante.
 type votanteImplementacion struct {
 	dni int
 	votoFinalizado bool
 	iteraciones int	
-	votosLista[] int
-	votosTipo[] TipoVoto
 	impugnado bool
 }
 
+var pilaVotosTipo pila.Pila[TipoVoto]
+var pilaVotosAlternativa pila.Pila[int]
+
+func inicializarPilas(){
+	pilaVotosTipo = pila.CrearPilaDinamica[TipoVoto]()
+	pilaVotosAlternativa = pila.CrearPilaDinamica[int]()
+}
 
 func CrearVotante(dni int) Votante {
-	return &votanteImplementacion{dni, false,0,[]int{},[]TipoVoto{},false}
+	inicializarPilas()
+	return &votanteImplementacion{dni, false,0,false}
 }
 
 func (votante votanteImplementacion) LeerDNI() int {
@@ -32,8 +40,8 @@ func (votante *votanteImplementacion) Votar(tipo TipoVoto, alternativa int) erro
 		if alternativa == 0{
 			votante.impugnado = true
 		}
-		votante.votosLista= append(votante.votosLista,alternativa)
-		votante.votosTipo= append(votante.votosTipo,tipo)
+		pilaVotosTipo.Apilar(tipo)
+		pilaVotosAlternativa.Apilar(alternativa)
 		votante.iteraciones++
 		return nil
 }
@@ -47,9 +55,11 @@ func (votante *votanteImplementacion) Deshacer() error {
 		err := errores.ErrorVotanteFraudulento{dni}
 		return err
 	}
-	votante.votosLista = votante.votosLista[:len(votante.votosLista)-1]
-	votante.votosTipo = votante.votosTipo[:len(votante.votosTipo)-1]
-
+	alternativa:=pilaVotosAlternativa.Desapilar()
+	if alternativa ==0{
+		votante.impugnado = false
+	}
+	pilaVotosTipo.Desapilar()
 	votante.iteraciones --
 	return nil
 }
@@ -60,8 +70,29 @@ func (votante *votanteImplementacion) FinVoto() (Voto, error) {
 		err := errores.ErrorVotanteFraudulento{dni}
 		return Voto{[CANT_VOTACION]int{0,0,0},votante.impugnado},err
 	}
+	if votante.impugnado{
+		return Voto{[CANT_VOTACION]int{0,0,0},votante.impugnado},nil
+	}
+	voto := [CANT_VOTACION]int{0,0,0}
+	contadorPresidente := 0
+	contadorGobernador := 0
+	contadorIntendente := 0
+	for !pilaVotosTipo.EstaVacia() && (contadorGobernador!= 1 && contadorPresidente !=1 && contadorIntendente!=1){
+		tipo := pilaVotosTipo.Desapilar()
+		alternativa := pilaVotosAlternativa.Desapilar()
+		if contadorPresidente== 0 && tipo == PRESIDENTE{
+			contadorPresidente++
+			voto[PRESIDENTE] = alternativa
+		} else if contadorGobernador== 0 && tipo == GOBERNADOR{
+			contadorGobernador++
+			voto[GOBERNADOR] = alternativa
+		} else if contadorIntendente== 0 && tipo == INTENDENTE{
+			contadorIntendente++
+			voto[INTENDENTE] = alternativa
+		}
+	}
 	votante.votoFinalizado = true
 	
-	return Voto{[CANT_VOTACION]int{0,0,0},votante.impugnado}, nil
+	return Voto{voto,votante.impugnado}, nil
 }
 

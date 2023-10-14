@@ -30,7 +30,10 @@ func (partido *partidoImplementacion) VotadoPara(tipo TipoVoto) {
 
 
 func (partido partidoImplementacion) ObtenerResultado(tipo TipoVoto) string {
-	stringReturn := partido.nombre + "- Postulante :" + partido.candidatos[tipo] + "-"+ strconv.Itoa(partido.votos[tipo]) + "votos"
+	if partido.NumeroLista == 0{
+		return ""
+	}
+	stringReturn := partido.nombre + " - Postulante : " + partido.candidatos[tipo] + " - "+ strconv.Itoa(partido.votos[tipo]) + " votos"
 	return stringReturn
 }
 
@@ -40,6 +43,6 @@ func (blanco *partidoEnBlanco) VotadoPara(tipo TipoVoto) {
 }
 
 func (blanco partidoEnBlanco) ObtenerResultado(tipo TipoVoto) string {
-	stringReturn := "Votos en Blanco: " + strconv.Itoa(blanco.votos[tipo]) + "votos"
+	stringReturn := "Votos en Blanco: " + strconv.Itoa(blanco.votos[tipo]) + " votos"
 	return stringReturn
 }
