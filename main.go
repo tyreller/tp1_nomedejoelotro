@@ -206,7 +206,11 @@ func imprimirResltador() {
 		stringIntendente += "\n"
 	}
 	fmt.Println(stringIntendente)
-	fmt.Printf("\nVotos impugnados: %d\n", votos.VotosImpugnados)
+	if votos.VotosImpugnados == 1{
+		fmt.Printf("\nVotos impugnados: %d voto", votos.VotosImpugnados)
+		return	
+	}
+	fmt.Printf("\nVotos impugnados: %d votos", votos.VotosImpugnados)
 }
 
 func finVoto(votante votos.Votante) {

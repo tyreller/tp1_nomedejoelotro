@@ -35,10 +35,10 @@ func (partido partidoImplementacion) ObtenerResultado(tipo TipoVoto) string {
 		return ""
 	}
 	if partido.votos[tipo] == 1 {
-		stringReturn := partido.nombre + " - Postulante : " + partido.candidatos[tipo] + " - " + strconv.Itoa(partido.votos[tipo]) + " voto"
+		stringReturn := partido.nombre + " - " + partido.candidatos[tipo] + ": " + strconv.Itoa(partido.votos[tipo]) + " voto"
 		return stringReturn
 	}
-	stringReturn := partido.nombre + " - Postulante : " + partido.candidatos[tipo] + " - " + strconv.Itoa(partido.votos[tipo]) + " votos"
+	stringReturn := partido.nombre + " - " + partido.candidatos[tipo] + ": " + strconv.Itoa(partido.votos[tipo]) + " votos"
 	return stringReturn
 
 }
