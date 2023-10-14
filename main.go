@@ -4,9 +4,9 @@ import (
 	"bufio"
 	"fmt"
 	"os"
-	"rerepolez/cola"
+	"tdas/cola"
+	"tdas/lista"
 	"rerepolez/errores"
-	"rerepolez/lista"
 	"rerepolez/votos"
 	"strconv"
 	"strings"
@@ -296,14 +296,3 @@ func main() {
 	imprimirResltador()
 
 }
-
-/*
-FALTA:
-
-	Aclaracion: Hay que crear partido en blanco
-
-	FUNCION DE Fin Votar
-	IMPRIMIR RESULTADOS (Falta el como leer cuando se finaliza el programa asi ejecutar la funcion)
-
-	Terminar las implementaciones de votantes/partidos.
-*/

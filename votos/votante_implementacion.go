@@ -2,7 +2,7 @@ package votos
 
 import (
 	"rerepolez/errores"
-	"rerepolez/pila"
+	"tdas/pila"
 )
 
 var VotosImpugnados = 0
