@@ -164,8 +164,6 @@ func votar(numeroLista int, tipoVoto string) {
 	persona := colaVotantes.VerPrimero()
 	err := persona.Votar(tipo, numeroLista)
 	if err != nil {
-		//El unico error que puede haber es que el votante ya haya votado (voto fraudulento)
-		//En ese caso, tambien hay que sacarlo de la cola
 		colaVotantes.Desencolar()
 		fmt.Println(err.Error())
 		return
@@ -185,7 +183,7 @@ func deshacer() {
 }
 
 func imprimirResltador() {
-	fmt.Println("\nPresidente:")
+	fmt.Println("Presidente:")
 	stringPresidente := partidoEnBlanco.ObtenerResultado(votos.PRESIDENTE)
 	for _, partido := range arregloDePartidos {
 		stringPresidente += partido.ObtenerResultado(votos.PRESIDENTE)
@@ -199,7 +197,7 @@ func imprimirResltador() {
 		stringGobernador += "\n"
 	}
 	fmt.Println(stringGobernador)
-	fmt.Println("\nIntendente:")
+	fmt.Println("Intendente:")
 	stringIntendente := partidoEnBlanco.ObtenerResultado(votos.INTENDENTE)
 	for _, partido := range arregloDePartidos {
 		stringIntendente += partido.ObtenerResultado(votos.INTENDENTE)
@@ -207,38 +205,31 @@ func imprimirResltador() {
 	}
 	fmt.Println(stringIntendente)
 	if votos.VotosImpugnados == 1{
-		fmt.Printf("\nVotos impugnados: %d voto", votos.VotosImpugnados)
+		fmt.Printf("Votos Impugnados: %d voto\n", votos.VotosImpugnados)
 		return	
 	}
-	fmt.Printf("\nVotos impugnados: %d votos", votos.VotosImpugnados)
+	fmt.Printf("Votos Impugnados: %d votos\n", votos.VotosImpugnados)
 }
 
 func finVoto(votante votos.Votante) {
 	voto, posibleError := votante.FinVoto()
-	if posibleError == nil && !voto.Impugnado {
+	if posibleError == nil && !voto.Impugnado && voto.VotoPorTipo[votos.PRESIDENTE]!=0 && voto.VotoPorTipo[votos.GOBERNADOR]!=0 && voto.VotoPorTipo[votos.INTENDENTE]!=0{
 		cantidadCandidatos := 3
 		for i := 0; i < cantidadCandidatos; i++ {
 			if voto.VotoPorTipo[i] != 0 {
 				arregloDePartidos[voto.VotoPorTipo[i]].VotadoPara(votos.TipoVoto(i))
+			}else{
+				partidoEnBlanco.VotadoPara(votos.TipoVoto(i))
 			}
 		}
 	}
 }
-func votarEnBlanco() {
-	cantidadCandidatos := 3
-	for !colaVotantes.EstaVacia() {
-		for i := 0; i < cantidadCandidatos; i++ {
-			partidoEnBlanco.VotadoPara(votos.TipoVoto(i))
-		}
-		colaVotantes.Desencolar()
-	}
-}
+
 
 func detectarVotantesFaltantes() {
 	if !colaVotantes.EstaVacia() {
 		err := errores.ErrorCiudadanosSinVotar{}
 		fmt.Println(err.Error())
-		votarEnBlanco()
 	}
 }
 func detectarErrorFin() bool {
@@ -293,6 +284,7 @@ func main() {
 				votante := colaVotantes.VerPrimero()
 				finVoto(votante)
 				colaVotantes.Desencolar()
+				fmt.Println("OK")
 			}
 		}
 	}
