@@ -5,7 +5,7 @@ import (
 	"rerepolez/pila"
 )
 
-var votosImpugnados = 0
+var VotosImpugnados = 0
 //Implementacion de pila para guardar los votos del votante.
 type votanteImplementacion struct {
 	dni int
@@ -39,6 +39,7 @@ func (votante *votanteImplementacion) Votar(tipo TipoVoto, alternativa int) erro
 		}
 		if alternativa == 0{
 			votante.impugnado = true
+			VotosImpugnados ++
 		}
 		pilaVotosTipo.Apilar(tipo)
 		pilaVotosAlternativa.Apilar(alternativa)
@@ -58,6 +59,7 @@ func (votante *votanteImplementacion) Deshacer() error {
 	alternativa:=pilaVotosAlternativa.Desapilar()
 	if alternativa ==0{
 		votante.impugnado = false
+		VotosImpugnados --
 	}
 	pilaVotosTipo.Desapilar()
 	votante.iteraciones --
@@ -77,7 +79,7 @@ func (votante *votanteImplementacion) FinVoto() (Voto, error) {
 	contadorPresidente := 0
 	contadorGobernador := 0
 	contadorIntendente := 0
-	for !pilaVotosTipo.EstaVacia() && (contadorGobernador!= 1 && contadorPresidente !=1 && contadorIntendente!=1){
+	for !pilaVotosTipo.EstaVacia() && (contadorGobernador!= 1 || contadorPresidente !=1 || contadorIntendente!=1){
 		tipo := pilaVotosTipo.Desapilar()
 		alternativa := pilaVotosAlternativa.Desapilar()
 		if contadorPresidente== 0 && tipo == PRESIDENTE{
