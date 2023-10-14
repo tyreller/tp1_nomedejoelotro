@@ -3,12 +3,12 @@ package votos
 type TipoVoto int
 
 const (
-	PRESIDENTE TipoVoto = iota 	// 0
-	GOBERNADOR 					// 1
-	INTENDENTE 					// 2
+	PRESIDENTE TipoVoto = iota // 0
+	GOBERNADOR                 // 1
+	INTENDENTE                 // 2
 )
 
-const ( 
+const (
 	CANT_VOTACION = INTENDENTE + 1
 	LISTA_IMPUGNA = 0
 )
