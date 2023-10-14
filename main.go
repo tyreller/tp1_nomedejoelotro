@@ -22,6 +22,7 @@ var (
 	//Implementacion de 1 cola para el orden en que se ingresan los votantes.
 	colaVotantes    cola.Cola[votos.Votante]
 	partidoEnBlanco votos.Partido
+	contadorVotos int
 )
 
 // Detecta un error si falta parametros al comenzar
@@ -99,6 +100,8 @@ func lecturaDeBoletas(archivo string) bool {
 }
 
 // Esta funcion verifica si el DNI pertenece al padron cargado previamente.
+
+//MEJORAR ESTA FUNCION DE COMPLEJIDAD
 func verificarDni(dni int) (votos.Votante, bool) {
 	iterador := listaVotantes.Iterador()
 	for iterador.HaySiguiente() {
@@ -168,6 +171,7 @@ func votar(numeroLista int, tipoVoto string) {
 		fmt.Println(err.Error())
 		return
 	}
+	contadorVotos ++
 	fmt.Println("OK")
 }
 
@@ -213,7 +217,7 @@ func imprimirResltador() {
 
 func finVoto(votante votos.Votante) {
 	voto, posibleError := votante.FinVoto()
-	if posibleError == nil && !voto.Impugnado && voto.VotoPorTipo[votos.PRESIDENTE]!=0 && voto.VotoPorTipo[votos.GOBERNADOR]!=0 && voto.VotoPorTipo[votos.INTENDENTE]!=0{
+	if posibleError == nil && !voto.Impugnado && contadorVotos > 0{
 		cantidadCandidatos := 3
 		for i := 0; i < cantidadCandidatos; i++ {
 			if voto.VotoPorTipo[i] != 0 {
@@ -259,7 +263,7 @@ func main() {
 	//Usamos esta forma, ya que es la que encontramos por internet. El fmt.Scan() nos estaba generando problemas con separar por ejemplo el ingresar <dni> en 2 .
 	escanerInput := bufio.NewScanner(os.Stdin)
 	var parametro string
-
+	contadorVotos = 0
 	for escanerInput.Scan() {
 
 		parametro = escanerInput.Text()
@@ -284,6 +288,7 @@ func main() {
 				votante := colaVotantes.VerPrimero()
 				finVoto(votante)
 				colaVotantes.Desencolar()
+				contadorVotos = 0
 				fmt.Println("OK")
 			}
 		}
