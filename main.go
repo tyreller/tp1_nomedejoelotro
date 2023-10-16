@@ -14,7 +14,6 @@ import (
 
 var (
 	// Implementacion de una lista enlazada para guardar el padron.
-	//listaVotantes lista.Lista[votos.Votante]
 	sliceVotantes []votos.Votante
 	// Implementacion de un arreglo  para guardar los partidos
 	arregloDePartidos []votos.Partido
