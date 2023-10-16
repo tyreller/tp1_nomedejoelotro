@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 	"tdas/cola"
-	"tdas/lista"
+	
 	"rerepolez/errores"
 	"rerepolez/votos"
 	"strconv"
@@ -14,8 +14,8 @@ import (
 
 var (
 	// Implementacion de una lista enlazada para guardar el padron.
-	listaVotantes lista.Lista[votos.Votante]
-
+	//listaVotantes lista.Lista[votos.Votante]
+	sliceVotantes []votos.Votante
 	// Implementacion de un arreglo  para guardar los partidos
 	arregloDePartidos []votos.Partido
 
@@ -28,9 +28,9 @@ var (
 // Detecta un error si falta parametros al comenzar
 func detectarErrorParametro(parametros []string, cantidadParametros int) bool {
 	if len(parametros) != cantidadParametros {
-		error := errores.ErrorParametros{}
+		err := errores.ErrorParametros{}
 
-		fmt.Println(error.Error())
+		fmt.Println(err.Error())
 		return true
 	}
 	return false
@@ -55,6 +55,7 @@ func lecturaDePadron(archivo string) bool {
 	if errorArchivo != nil {
 		return false
 	}
+
 	lector := bufio.NewReader(archivoAbierto)
 	for {
 		linea, err := lector.ReadString('\n')
@@ -64,8 +65,11 @@ func lecturaDePadron(archivo string) bool {
 		linea = strings.TrimSuffix(linea, "\n")
 		dni, _ := strconv.Atoi(linea)
 		votante := votos.CrearVotante(dni)
-		listaVotantes.InsertarUltimo(votante)
+		sliceVotantes = append(sliceVotantes,votante)
 	}
+
+	sliceVotantes = mergeSortVotantes(sliceVotantes) //Ordena el slice de votantes
+	
 	return true
 }
 
@@ -101,17 +105,75 @@ func lecturaDeBoletas(archivo string) bool {
 
 // Esta funcion verifica si el DNI pertenece al padron cargado previamente.
 
-//MEJORAR ESTA FUNCION DE COMPLEJIDAD
+
 func verificarDni(dni int) (votos.Votante, bool) {
-	iterador := listaVotantes.Iterador()
-	for iterador.HaySiguiente() {
-		if dni == (iterador.VerActual().LeerDNI()) {
-			return iterador.VerActual(), true
-		}
-		iterador.Siguiente()
+	indiceSlice, encontrado := busquedaBinaria(sliceVotantes, dni)
+	if encontrado == true {
+		return sliceVotantes[indiceSlice],true
 	}
 	return nil, false
 }
+
+func merge(izq, der []votos.Votante) []votos.Votante{
+	sliceFinal := make([]votos.Votante, 0, len(izq)+len(der)) 
+	//Le fijamos la cap para que no tenga que redimensionar
+
+	i, d := 0,0 //izquierda y derecha
+
+	//Mientras no se acabe ninguna de las mitades
+	for i < len(izq) && d < len(der){
+		if izq[i].LeerDNI() < der[d].LeerDNI() {
+			sliceFinal = append(sliceFinal,izq[i])
+			i++
+		} else {
+			sliceFinal = append(sliceFinal,der[d])
+			d++
+		}
+	}
+
+	//Inserta todos los elementos que faltaran, si es que faltaba alguno
+	for j := i; j<len(izq); j++{
+		sliceFinal = append(sliceFinal,izq[j])
+	}
+	for j := d; j<len(der); j++{
+		sliceFinal = append(sliceFinal,der[j])
+	}
+
+	return sliceFinal
+}
+
+func mergeSortVotantes(slice []votos.Votante) []votos.Votante {
+	if len(slice) <= 1{
+		return slice
+	}
+
+	mit := len(slice)/2
+	izq := mergeSortVotantes(slice[:mit])
+	der := mergeSortVotantes(slice[mit:])
+
+	return merge(izq,der)
+}
+
+func busquedaBinaria(sliceVotantes []votos.Votante, dniBuscado int) (int,bool){
+	izq, der := 0, len(sliceVotantes)-1
+
+	for izq <= der {
+		mit := (izq + der)/2
+
+		if sliceVotantes[mit].LeerDNI() < dniBuscado {
+			izq = mit + 1
+		}
+		if sliceVotantes[mit].LeerDNI() > dniBuscado {
+			der = mit - 1
+		}
+		if sliceVotantes[mit].LeerDNI() == dniBuscado{
+			return mit, true
+		}
+	}
+
+	return -1,false
+}
+
 
 // Ingresa el dni válido a la cola.
 func ingresar(dni int) {
@@ -259,7 +321,8 @@ func detectarErrorFin() bool {
 
 func main() {
 	params := os.Args[1:]
-	listaVotantes = lista.CrearListaEnlazada[votos.Votante]()
+	sliceVotantes = make([]votos.Votante, 0)
+	
 	if detectarErrorParametro(params, 2) {
 		return
 	}
@@ -269,6 +332,7 @@ func main() {
 	if !lecturaDePadron(params[1]) {
 		return
 	}
+	
 	partidoEnBlanco = votos.CrearVotosEnBlanco()
 
 	colaVotantes = cola.CrearColaEnlazada[votos.Votante]()
