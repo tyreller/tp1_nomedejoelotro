@@ -163,7 +163,7 @@ func transformarTipoVoto(tipoVoto string) votos.TipoVoto {
 
 // Funcion de votar
 func votar(numeroLista int, tipoVoto string) {
-	tipo := transformarTipoVoto(tipoVoto)
+	tipo := transformarTipoVoto(strings.ToLower(tipoVoto))
 	persona := colaVotantes.VerPrimero()
 	err := persona.Votar(tipo, numeroLista)
 	if err != nil {
@@ -178,7 +178,11 @@ func votar(numeroLista int, tipoVoto string) {
 func deshacer() {
 	persona := colaVotantes.VerPrimero()
 	err := persona.Deshacer()
+	errorVotoFraude := errores.ErrorVotanteFraudulento{persona.LeerDNI()}
 	if err != nil {
+		if err ==  errorVotoFraude{
+			colaVotantes.Desencolar()
+		}
 		fmt.Println(err.Error())
 		return
 	}
@@ -217,18 +221,26 @@ func imprimirResltador() {
 
 func finVoto(votante votos.Votante) {
 	voto, posibleError := votante.FinVoto()
-	if posibleError == nil && !voto.Impugnado && contadorVotos > 0{
-		cantidadCandidatos := 3
+	todoVotoEnBlanco := [3]int{0,0,0}
+	cantidadCandidatos := 3
+	if posibleError == nil && !voto.Impugnado && contadorVotos > 0 && voto.VotoPorTipo != todoVotoEnBlanco{
+
 		for i := 0; i < cantidadCandidatos; i++ {
+		
 			if voto.VotoPorTipo[i] != 0 {
 				arregloDePartidos[voto.VotoPorTipo[i]].VotadoPara(votos.TipoVoto(i))
 			}else{
 				partidoEnBlanco.VotadoPara(votos.TipoVoto(i))
 			}
 		}
-	}
-}
+	} else if posibleError == nil &&  !voto.Impugnado &&voto.VotoPorTipo == todoVotoEnBlanco{
 
+		for i := 0; i < cantidadCandidatos; i++ {
+			partidoEnBlanco.VotadoPara(votos.TipoVoto(i))
+		}
+	}
+	
+}
 
 func detectarVotantesFaltantes() {
 	if !colaVotantes.EstaVacia() {
@@ -277,17 +289,22 @@ func main() {
 
 		case "votar":
 			tipoVoto := parametroSeparado[1]
-			numeroLista, _ := strconv.Atoi(parametroSeparado[2])
-			if verificarErroresVotacion(tipoVoto, numeroLista) {
+			
+			numeroLista, err:= strconv.Atoi(parametroSeparado[2])
+			if err != nil{
+				errorAlterniva := errores.ErrorAlternativaInvalida{}
+				fmt.Println(errorAlterniva.Error())
+			}else if verificarErroresVotacion(tipoVoto, numeroLista)  {
 				votar(numeroLista, tipoVoto)
 			}
 		case "deshacer":
-			deshacer()
+			if !detectarErrorFin(){
+				deshacer()
+			}
 		case "fin-votar":
 			if !detectarErrorFin() {
-				votante := colaVotantes.VerPrimero()
+				votante := colaVotantes.Desencolar()
 				finVoto(votante)
-				colaVotantes.Desencolar()
 				contadorVotos = 0
 				fmt.Println("OK")
 			}

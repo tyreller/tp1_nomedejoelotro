@@ -3,6 +3,7 @@ package votos
 import (
 	"rerepolez/errores"
 	"tdas/pila"
+	
 )
 
 var VotosImpugnados = 0
@@ -49,12 +50,12 @@ func (votante *votanteImplementacion) Votar(tipo TipoVoto, alternativa int) erro
 }
 
 func (votante *votanteImplementacion) Deshacer() error {
-	if votante.iteraciones == 0 {
-		err := errores.ErrorNoHayVotosAnteriores{}
-		return err
-	} else if votante.votoFinalizado {
+	if votante.votoFinalizado {
 		dni := votante.dni
 		err := errores.ErrorVotanteFraudulento{dni}
+		return err
+	} else if votante.iteraciones == 0 {
+		err := errores.ErrorNoHayVotosAnteriores{}
 		return err
 	}
 	alternativa := pilaVotosAlternativa.Desapilar()
@@ -64,19 +65,30 @@ func (votante *votanteImplementacion) Deshacer() error {
 	}
 	pilaVotosTipo.Desapilar()
 	votante.iteraciones--
+
 	return nil
 }
 
+func VaciarPilas(){
+	for !pilaVotosTipo.EstaVacia(){
+		pilaVotosTipo.Desapilar()
+	}
+	for !pilaVotosAlternativa.EstaVacia(){
+		pilaVotosAlternativa.Desapilar()
+	}
+}
+
 func (votante *votanteImplementacion) FinVoto() (Voto, error) {
+	voto := [CANT_VOTACION]int{0, 0, 0}
 	if votante.votoFinalizado {
 		dni := votante.dni
 		err := errores.ErrorVotanteFraudulento{dni}
 		return Voto{[CANT_VOTACION]int{0, 0, 0}, votante.impugnado}, err
 	}
 	if votante.impugnado {
+		VaciarPilas()
 		return Voto{[CANT_VOTACION]int{0, 0, 0}, votante.impugnado}, nil
 	}
-	voto := [CANT_VOTACION]int{0, 0, 0}
 	contadorPresidente := 0
 	contadorGobernador := 0
 	contadorIntendente := 0
@@ -95,6 +107,6 @@ func (votante *votanteImplementacion) FinVoto() (Voto, error) {
 		}
 	}
 	votante.votoFinalizado = true
-
+	VaciarPilas()
 	return Voto{voto, votante.impugnado}, nil
 }
