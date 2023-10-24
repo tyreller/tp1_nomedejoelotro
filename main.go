@@ -4,24 +4,11 @@ import (
 	"bufio"
 	"fmt"
 	"os"
-	"tdas/cola"
-	
 	"rerepolez/errores"
 	"rerepolez/votos"
 	"strconv"
 	"strings"
-)
-
-var (
-	// Implementacion de una lista enlazada para guardar el padron.
-	sliceVotantes []votos.Votante
-	// Implementacion de un arreglo  para guardar los partidos
-	arregloDePartidos []votos.Partido
-
-	//Implementacion de 1 cola para el orden en que se ingresan los votantes.
-	colaVotantes    cola.Cola[votos.Votante]
-	partidoEnBlanco votos.Partido
-	contadorVotos int
+	"tdas/cola"
 )
 
 // Detecta un error si falta parametros al comenzar
@@ -48,7 +35,7 @@ func detectarErrorArchivo(archivo string) (*os.File, error) {
 }
 
 // Funcion para leer el archivo del padron
-func lecturaDePadron(archivo string) bool {
+func lecturaDePadron(archivo string, sliceVotantes *[]votos.Votante) bool {
 	archivoAbierto, errorArchivo := detectarErrorArchivo(archivo)
 	defer archivoAbierto.Close()
 	if errorArchivo != nil {
@@ -64,24 +51,25 @@ func lecturaDePadron(archivo string) bool {
 		linea = strings.TrimSuffix(linea, "\n")
 		dni, _ := strconv.Atoi(linea)
 		votante := votos.CrearVotante(dni)
-		sliceVotantes = append(sliceVotantes,votante)
+		*sliceVotantes = append(*sliceVotantes, votante) //Almacena uno a uno todos los DNI's
 	}
 
-	sliceVotantes = mergeSortVotantes(sliceVotantes) //Ordena el slice de votantes
-	
+	*sliceVotantes = mergeSortVotantes(*sliceVotantes) //Ordena el slice de votantes
+
 	return true
 }
 
 // Funcion para leer el archivo de las boletas. Ademas crea cada Partido y los guarda en una lista enlazada.
-func lecturaDeBoletas(archivo string) bool {
+func lecturaDeBoletas(archivo string, arregloDePartidos *[]votos.Partido) bool {
 	archivoAbierto, errorArchivo := detectarErrorArchivo(archivo)
 	defer archivoAbierto.Close()
 	if errorArchivo != nil {
 		return false
 	}
+
 	lector := bufio.NewReader(archivoAbierto)
 	partidoNulo := votos.CrearPartido("", votos.LISTA_IMPUGNA, [votos.CANT_VOTACION]string{"", "", ""}, [votos.CANT_VOTACION]int{votos.LISTA_IMPUGNA, votos.LISTA_IMPUGNA, votos.LISTA_IMPUGNA})
-	arregloDePartidos = append(arregloDePartidos, partidoNulo)
+	*arregloDePartidos = append(*arregloDePartidos, partidoNulo)
 	contador := 1
 	for {
 		linea, err := lector.ReadString('\n')
@@ -97,67 +85,69 @@ func lecturaDeBoletas(archivo string) bool {
 		candidatos[votos.INTENDENTE] = strings.TrimSuffix(partidoArreglo[3], "\n")
 		partido := votos.CrearPartido(nombrePartido, contador, candidatos, [votos.CANT_VOTACION]int{0, 0, 0})
 		contador++
-		arregloDePartidos = append(arregloDePartidos, partido)
+		*arregloDePartidos = append(*arregloDePartidos, partido)
 	}
 	return true
 }
 
 // Esta funcion verifica si el DNI pertenece al padron cargado previamente.
-
-
-func verificarDni(dni int) (votos.Votante, bool) {
-	indiceSlice, encontrado := busquedaBinaria(sliceVotantes, dni)
-	if encontrado == true {
-		return sliceVotantes[indiceSlice],true
+// Si existe, devuelve la struct del votante con ese numero de DNI
+func verificarDni(dni int, sliceVotantes []votos.Votante) (votos.Votante, bool) {
+	indiceSlice := busquedaBinaria(sliceVotantes, dni)
+	if indiceSlice >= 0 { //Si el indice es no negativo, significa que el votante fue encontrado
+		return sliceVotantes[indiceSlice], true
 	}
 	return nil, false
 }
 
-func merge(izq, der []votos.Votante) []votos.Votante{
-	sliceFinal := make([]votos.Votante, 0, len(izq)+len(der)) 
+// MergeSort para ordenar de menor a mayor el padron
+// Parte el slice en mitades recursivamente hasta que quede solo 1 elemento
+func mergeSortVotantes(slice []votos.Votante) []votos.Votante {
+	if len(slice) <= 1 {
+		return slice
+	}
+
+	mit := len(slice) / 2
+	izq := mergeSortVotantes(slice[:mit])
+	der := mergeSortVotantes(slice[mit:])
+
+	return merge(izq, der)
+}
+
+// Junta las mitades en un slice pero de forma ordenada
+func merge(izq, der []votos.Votante) []votos.Votante {
+	sliceFinal := make([]votos.Votante, 0, len(izq)+len(der))
 	//Le fijamos la cap para que no tenga que redimensionar
 
-	i, d := 0,0 //izquierda y derecha
+	i, d := 0, 0 //izquierda y derecha
 
 	//Mientras no se acabe ninguna de las mitades
-	for i < len(izq) && d < len(der){
+	for i < len(izq) && d < len(der) {
 		if izq[i].LeerDNI() < der[d].LeerDNI() {
-			sliceFinal = append(sliceFinal,izq[i])
+			sliceFinal = append(sliceFinal, izq[i])
 			i++
 		} else {
-			sliceFinal = append(sliceFinal,der[d])
+			sliceFinal = append(sliceFinal, der[d])
 			d++
 		}
 	}
 
 	//Inserta todos los elementos que faltaran, si es que faltaba alguno
-	for j := i; j<len(izq); j++{
-		sliceFinal = append(sliceFinal,izq[j])
+	for j := i; j < len(izq); j++ {
+		sliceFinal = append(sliceFinal, izq[j])
 	}
-	for j := d; j<len(der); j++{
-		sliceFinal = append(sliceFinal,der[j])
+	for j := d; j < len(der); j++ {
+		sliceFinal = append(sliceFinal, der[j])
 	}
 
 	return sliceFinal
 }
 
-func mergeSortVotantes(slice []votos.Votante) []votos.Votante {
-	if len(slice) <= 1{
-		return slice
-	}
-
-	mit := len(slice)/2
-	izq := mergeSortVotantes(slice[:mit])
-	der := mergeSortVotantes(slice[mit:])
-
-	return merge(izq,der)
-}
-
-func busquedaBinaria(sliceVotantes []votos.Votante, dniBuscado int) (int,bool){
+func busquedaBinaria(sliceVotantes []votos.Votante, dniBuscado int) int {
 	izq, der := 0, len(sliceVotantes)-1
 
 	for izq <= der {
-		mit := (izq + der)/2
+		mit := (izq + der) / 2
 
 		if sliceVotantes[mit].LeerDNI() < dniBuscado {
 			izq = mit + 1
@@ -165,35 +155,34 @@ func busquedaBinaria(sliceVotantes []votos.Votante, dniBuscado int) (int,bool){
 		if sliceVotantes[mit].LeerDNI() > dniBuscado {
 			der = mit - 1
 		}
-		if sliceVotantes[mit].LeerDNI() == dniBuscado{
-			return mit, true
+		if sliceVotantes[mit].LeerDNI() == dniBuscado {
+			return mit
 		}
 	}
 
-	return -1,false
+	return -1
 }
 
-
 // Ingresa el dni válido a la cola.
-func ingresar(dni int) {
+func ingresar(dni int, sliceVotantes []votos.Votante, colaVotantes *cola.Cola[votos.Votante]) {
 	if dni <= 0 {
 		err := errores.DNIError{}
 		fmt.Println(err.Error())
 		return
 	}
-	votante, existe := verificarDni(dni)
+	votante, existe := verificarDni(dni, sliceVotantes)
 	if !existe {
 		err := errores.DNIFueraPadron{}
 		fmt.Println(err.Error())
 		return
 	}
-	colaVotantes.Encolar(votante)
+	(*colaVotantes).Encolar(votante)
 	fmt.Println("OK")
 
 }
 
 // Verificacion de Error de ingreso del comando votar
-func verificarErroresVotacion(tipoVoto string, numeroLista int) bool {
+func verificarErroresVotacion(tipoVoto string, numeroLista int, arregloDePartidos []votos.Partido, colaVotantes cola.Cola[votos.Votante]) bool {
 	cantidadPartidos := len(arregloDePartidos) - 1
 	if colaVotantes.EstaVacia() {
 		err := errores.FilaVacia{}
@@ -223,35 +212,34 @@ func transformarTipoVoto(tipoVoto string) votos.TipoVoto {
 }
 
 // Funcion de votar
-func votar(numeroLista int, tipoVoto string) {
+func votar(numeroLista int, tipoVoto string, colaVotantes *cola.Cola[votos.Votante], contadorVotos *int) {
 	tipo := transformarTipoVoto(strings.ToLower(tipoVoto))
-	persona := colaVotantes.VerPrimero()
+	persona := (*colaVotantes).VerPrimero()
 	err := persona.Votar(tipo, numeroLista)
 	if err != nil {
-		colaVotantes.Desencolar()
+		(*colaVotantes).Desencolar()
 		fmt.Println(err.Error())
 		return
 	}
-	contadorVotos ++
+	(*contadorVotos)++
 	fmt.Println("OK")
 }
 
-func deshacer() {
-	persona := colaVotantes.VerPrimero()
+func deshacer(colaVotantes *cola.Cola[votos.Votante]) {
+	persona := (*colaVotantes).VerPrimero()
 	err := persona.Deshacer()
 	errorVotoFraude := errores.ErrorVotanteFraudulento{persona.LeerDNI()}
 	if err != nil {
-		if err ==  errorVotoFraude{
-			colaVotantes.Desencolar()
+		if err == errorVotoFraude {
+			(*colaVotantes).Desencolar()
 		}
 		fmt.Println(err.Error())
 		return
 	}
 	fmt.Println("OK")
-	return
 }
 
-func imprimirResltador() {
+func imprimirResltador(arregloDePartidos []votos.Partido, partidoEnBlanco votos.Partido) {
 	fmt.Println("Presidente:")
 	stringPresidente := partidoEnBlanco.ObtenerResultado(votos.PRESIDENTE)
 	for _, partido := range arregloDePartidos {
@@ -273,43 +261,43 @@ func imprimirResltador() {
 		stringIntendente += "\n"
 	}
 	fmt.Println(stringIntendente)
-	if votos.VotosImpugnados == 1{
+	if votos.VotosImpugnados == 1 {
 		fmt.Printf("Votos Impugnados: %d voto\n", votos.VotosImpugnados)
-		return	
+		return
 	}
 	fmt.Printf("Votos Impugnados: %d votos\n", votos.VotosImpugnados)
 }
 
-func finVoto(votante votos.Votante) {
+func finVoto(votante votos.Votante, arregloDePartidos *[]votos.Partido, partidoEnBlanco *votos.Partido, contadorVotos int) {
 	voto, posibleError := votante.FinVoto()
-	todoVotoEnBlanco := [3]int{0,0,0}
+	todoVotoEnBlanco := [3]int{0, 0, 0}
 	cantidadCandidatos := 3
-	if posibleError == nil && !voto.Impugnado && contadorVotos > 0 && voto.VotoPorTipo != todoVotoEnBlanco{
+	if posibleError == nil && !voto.Impugnado && contadorVotos > 0 && voto.VotoPorTipo != todoVotoEnBlanco {
 
 		for i := 0; i < cantidadCandidatos; i++ {
-		
+
 			if voto.VotoPorTipo[i] != 0 {
-				arregloDePartidos[voto.VotoPorTipo[i]].VotadoPara(votos.TipoVoto(i))
-			}else{
-				partidoEnBlanco.VotadoPara(votos.TipoVoto(i))
+				(*arregloDePartidos)[voto.VotoPorTipo[i]].VotadoPara(votos.TipoVoto(i))
+			} else {
+				(*partidoEnBlanco).VotadoPara(votos.TipoVoto(i))
 			}
 		}
-	} else if posibleError == nil &&  !voto.Impugnado &&voto.VotoPorTipo == todoVotoEnBlanco{
+	} else if posibleError == nil && !voto.Impugnado && voto.VotoPorTipo == todoVotoEnBlanco {
 
 		for i := 0; i < cantidadCandidatos; i++ {
-			partidoEnBlanco.VotadoPara(votos.TipoVoto(i))
+			(*partidoEnBlanco).VotadoPara(votos.TipoVoto(i))
 		}
 	}
-	
+
 }
 
-func detectarVotantesFaltantes() {
+func detectarVotantesFaltantes(colaVotantes cola.Cola[votos.Votante]) {
 	if !colaVotantes.EstaVacia() {
 		err := errores.ErrorCiudadanosSinVotar{}
 		fmt.Println(err.Error())
 	}
 }
-func detectarErrorFin() bool {
+func detectarErrorFin(colaVotantes cola.Cola[votos.Votante]) bool {
 	if colaVotantes.EstaVacia() {
 		err := errores.FilaVacia{}
 		fmt.Println(err.Error())
@@ -320,25 +308,29 @@ func detectarErrorFin() bool {
 
 func main() {
 	params := os.Args[1:]
-	sliceVotantes = make([]votos.Votante, 0)
-	
+	// Implementacion de un slice para guardar el padron en el.
+	sliceVotantes := make([]votos.Votante, 0)
+
+	// Implementacion de un arreglo  para guardar los partidos
+	var arregloDePartidos []votos.Partido
+
 	if detectarErrorParametro(params, 2) {
 		return
 	}
-	if !lecturaDeBoletas(params[0]) {
+	if !lecturaDeBoletas(params[0], &arregloDePartidos) {
 		return
 	}
-	if !lecturaDePadron(params[1]) {
+	if !lecturaDePadron(params[1], &sliceVotantes) {
 		return
 	}
-	
-	partidoEnBlanco = votos.CrearVotosEnBlanco()
 
-	colaVotantes = cola.CrearColaEnlazada[votos.Votante]()
+	partidoEnBlanco := votos.CrearVotosEnBlanco()
+
+	colaVotantes := cola.CrearColaEnlazada[votos.Votante]()
 	//Usamos esta forma, ya que es la que encontramos por internet. El fmt.Scan() nos estaba generando problemas con separar por ejemplo el ingresar <dni> en 2 .
 	escanerInput := bufio.NewScanner(os.Stdin)
 	var parametro string
-	contadorVotos = 0
+	contadorVotos := 0
 	for escanerInput.Scan() {
 
 		parametro = escanerInput.Text()
@@ -348,32 +340,32 @@ func main() {
 		switch strings.ToLower(comando) {
 		case "ingresar":
 			dniIngresado, _ := strconv.Atoi(parametroSeparado[1])
-			ingresar(dniIngresado)
+			ingresar(dniIngresado, sliceVotantes, &colaVotantes)
 
 		case "votar":
 			tipoVoto := parametroSeparado[1]
-			
-			numeroLista, err:= strconv.Atoi(parametroSeparado[2])
-			if err != nil{
+
+			numeroLista, err := strconv.Atoi(parametroSeparado[2])
+			if err != nil {
 				errorAlterniva := errores.ErrorAlternativaInvalida{}
 				fmt.Println(errorAlterniva.Error())
-			}else if verificarErroresVotacion(tipoVoto, numeroLista)  {
-				votar(numeroLista, tipoVoto)
+			} else if verificarErroresVotacion(tipoVoto, numeroLista, arregloDePartidos, colaVotantes) {
+				votar(numeroLista, tipoVoto, &colaVotantes, &contadorVotos)
 			}
 		case "deshacer":
-			if !detectarErrorFin(){
-				deshacer()
+			if !detectarErrorFin(colaVotantes) {
+				deshacer(&colaVotantes)
 			}
 		case "fin-votar":
-			if !detectarErrorFin() {
+			if !detectarErrorFin(colaVotantes) {
 				votante := colaVotantes.Desencolar()
-				finVoto(votante)
+				finVoto(votante, &arregloDePartidos, &partidoEnBlanco, contadorVotos)
 				contadorVotos = 0
 				fmt.Println("OK")
 			}
 		}
 	}
-	detectarVotantesFaltantes()
-	imprimirResltador()
+	detectarVotantesFaltantes(colaVotantes)
+	imprimirResltador(arregloDePartidos, partidoEnBlanco)
 
 }

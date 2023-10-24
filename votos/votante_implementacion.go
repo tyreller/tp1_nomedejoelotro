@@ -3,7 +3,6 @@ package votos
 import (
 	"rerepolez/errores"
 	"tdas/pila"
-	
 )
 
 var VotosImpugnados = 0
@@ -69,11 +68,11 @@ func (votante *votanteImplementacion) Deshacer() error {
 	return nil
 }
 
-func VaciarPilas(){
-	for !pilaVotosTipo.EstaVacia(){
+func VaciarPilas() {
+	for !pilaVotosTipo.EstaVacia() {
 		pilaVotosTipo.Desapilar()
 	}
-	for !pilaVotosAlternativa.EstaVacia(){
+	for !pilaVotosAlternativa.EstaVacia() {
 		pilaVotosAlternativa.Desapilar()
 	}
 }

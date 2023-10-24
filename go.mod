@@ -1,6 +1,6 @@
 module rerepolez
 
-go 1.21.2
+go 1.21
 
 replace tdas => ../tdas
 
