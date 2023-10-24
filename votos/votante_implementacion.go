@@ -5,8 +5,6 @@ import (
 	"tdas/pila"
 )
 
-var VotosImpugnados = 0
-
 // Implementacion de pila para guardar los votos del votante.
 type votanteImplementacion struct {
 	dni            int
@@ -40,7 +38,6 @@ func (votante *votanteImplementacion) Votar(tipo TipoVoto, alternativa int) erro
 	}
 	if alternativa == 0 {
 		votante.impugnado = true
-		VotosImpugnados++
 	}
 	pilaVotosTipo.Apilar(tipo)
 	pilaVotosAlternativa.Apilar(alternativa)
@@ -60,7 +57,6 @@ func (votante *votanteImplementacion) Deshacer() error {
 	alternativa := pilaVotosAlternativa.Desapilar()
 	if alternativa == 0 {
 		votante.impugnado = false
-		VotosImpugnados--
 	}
 	pilaVotosTipo.Desapilar()
 	votante.iteraciones--

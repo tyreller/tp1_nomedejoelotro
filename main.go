@@ -239,7 +239,7 @@ func deshacer(colaVotantes *cola.Cola[votos.Votante]) {
 	fmt.Println("OK")
 }
 
-func imprimirResltador(arregloDePartidos []votos.Partido, partidoEnBlanco votos.Partido) {
+func imprimirResltador(arregloDePartidos []votos.Partido, partidoEnBlanco votos.Partido, VotosImpugnados int) {
 	fmt.Println("Presidente:")
 	stringPresidente := partidoEnBlanco.ObtenerResultado(votos.PRESIDENTE)
 	for _, partido := range arregloDePartidos {
@@ -261,15 +261,18 @@ func imprimirResltador(arregloDePartidos []votos.Partido, partidoEnBlanco votos.
 		stringIntendente += "\n"
 	}
 	fmt.Println(stringIntendente)
-	if votos.VotosImpugnados == 1 {
-		fmt.Printf("Votos Impugnados: %d voto\n", votos.VotosImpugnados)
+	if VotosImpugnados == 1 {
+		fmt.Printf("Votos Impugnados: %d voto\n", VotosImpugnados)
 		return
 	}
-	fmt.Printf("Votos Impugnados: %d votos\n", votos.VotosImpugnados)
+	fmt.Printf("Votos Impugnados: %d votos\n", VotosImpugnados)
 }
 
-func finVoto(votante votos.Votante, arregloDePartidos *[]votos.Partido, partidoEnBlanco *votos.Partido, contadorVotos int) {
+func finVoto(votante votos.Votante, arregloDePartidos *[]votos.Partido, partidoEnBlanco *votos.Partido, contadorVotos int, VotosImpugnados int) int {
 	voto, posibleError := votante.FinVoto()
+	if voto.Impugnado {
+		VotosImpugnados++
+	}
 	todoVotoEnBlanco := [3]int{0, 0, 0}
 	cantidadCandidatos := 3
 	if posibleError == nil && !voto.Impugnado && contadorVotos > 0 && voto.VotoPorTipo != todoVotoEnBlanco {
@@ -288,6 +291,7 @@ func finVoto(votante votos.Votante, arregloDePartidos *[]votos.Partido, partidoE
 			(*partidoEnBlanco).VotadoPara(votos.TipoVoto(i))
 		}
 	}
+	return VotosImpugnados
 
 }
 
@@ -323,7 +327,7 @@ func main() {
 	if !lecturaDePadron(params[1], &sliceVotantes) {
 		return
 	}
-
+	VotosImpugnados := 0
 	partidoEnBlanco := votos.CrearVotosEnBlanco()
 
 	colaVotantes := cola.CrearColaEnlazada[votos.Votante]()
@@ -359,13 +363,13 @@ func main() {
 		case "fin-votar":
 			if !detectarErrorFin(colaVotantes) {
 				votante := colaVotantes.Desencolar()
-				finVoto(votante, &arregloDePartidos, &partidoEnBlanco, contadorVotos)
+				VotosImpugnados = finVoto(votante, &arregloDePartidos, &partidoEnBlanco, contadorVotos, VotosImpugnados)
 				contadorVotos = 0
 				fmt.Println("OK")
 			}
 		}
 	}
 	detectarVotantesFaltantes(colaVotantes)
-	imprimirResltador(arregloDePartidos, partidoEnBlanco)
+	imprimirResltador(arregloDePartidos, partidoEnBlanco, VotosImpugnados)
 
 }
