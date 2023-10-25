@@ -7,21 +7,18 @@ import (
 
 // Implementacion de pila para guardar los votos del votante.
 type votanteImplementacion struct {
-	dni            int
-	votoFinalizado bool
-	iteraciones    int
-	impugnado      bool
-	pilaVotosTipo pila.Pila[TipoVoto]
+	dni                  int
+	votoFinalizado       bool
+	iteraciones          int
+	impugnado            bool
+	pilaVotosTipo        pila.Pila[TipoVoto]
 	pilaVotosAlternativa pila.Pila[int]
 }
-
-
-
 
 func CrearVotante(dni int) Votante {
 	pilaVotosTipo := pila.CrearPilaDinamica[TipoVoto]()
 	pilaVotosAlternativa := pila.CrearPilaDinamica[int]()
-	return &votanteImplementacion{dni, false, 0, false,pilaVotosTipo,pilaVotosAlternativa}
+	return &votanteImplementacion{dni, false, 0, false, pilaVotosTipo, pilaVotosAlternativa}
 }
 
 func (votante votanteImplementacion) LeerDNI() int {
@@ -29,7 +26,7 @@ func (votante votanteImplementacion) LeerDNI() int {
 }
 
 func (votante *votanteImplementacion) Votar(tipo TipoVoto, alternativa int) error {
-	
+
 	if votante.votoFinalizado {
 		dni := votante.dni
 		err := errores.ErrorVotanteFraudulento{dni}
@@ -63,14 +60,14 @@ func (votante *votanteImplementacion) Deshacer() error {
 	return nil
 }
 
-func VaciarPilas(pilaVotosTipo pila.Pila[TipoVoto], pilaVotosAlternativa pila.Pila[int]) (pila.Pila[TipoVoto],pila.Pila[int]) {
+func VaciarPilas(pilaVotosTipo pila.Pila[TipoVoto], pilaVotosAlternativa pila.Pila[int]) (pila.Pila[TipoVoto], pila.Pila[int]) {
 	for !pilaVotosTipo.EstaVacia() {
 		pilaVotosTipo.Desapilar()
 	}
 	for !pilaVotosAlternativa.EstaVacia() {
 		pilaVotosAlternativa.Desapilar()
 	}
-	return pilaVotosTipo,pilaVotosAlternativa
+	return pilaVotosTipo, pilaVotosAlternativa
 }
 
 func (votante *votanteImplementacion) FinVoto() (Voto, error) {
@@ -81,7 +78,7 @@ func (votante *votanteImplementacion) FinVoto() (Voto, error) {
 		return Voto{[CANT_VOTACION]int{0, 0, 0}, votante.impugnado}, err
 	}
 	if votante.impugnado {
-		votante.pilaVotosTipo,votante.pilaVotosAlternativa = VaciarPilas(votante.pilaVotosTipo,votante.pilaVotosAlternativa)
+		votante.pilaVotosTipo, votante.pilaVotosAlternativa = VaciarPilas(votante.pilaVotosTipo, votante.pilaVotosAlternativa)
 		return Voto{[CANT_VOTACION]int{0, 0, 0}, votante.impugnado}, nil
 	}
 	contadorPresidente := 0
@@ -102,6 +99,6 @@ func (votante *votanteImplementacion) FinVoto() (Voto, error) {
 		}
 	}
 	votante.votoFinalizado = true
-	votante.pilaVotosTipo,votante.pilaVotosAlternativa = VaciarPilas(votante.pilaVotosTipo,votante.pilaVotosAlternativa)
+	votante.pilaVotosTipo, votante.pilaVotosAlternativa = VaciarPilas(votante.pilaVotosTipo, votante.pilaVotosAlternativa)
 	return Voto{voto, votante.impugnado}, nil
 }
