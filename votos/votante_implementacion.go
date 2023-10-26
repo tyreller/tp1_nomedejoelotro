@@ -84,6 +84,7 @@ func (votante *votanteImplementacion) Deshacer() error {
 
 func (votante *votanteImplementacion) FinVoto() (Voto, error) {
 	voto := [CANT_VOTACION]int{0, 0, 0}
+	
 	if votante.votoFinalizado {
 		dni := votante.dni
 		err := errores.ErrorVotanteFraudulento{dni}

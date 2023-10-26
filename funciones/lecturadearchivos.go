@@ -7,16 +7,16 @@ import (
 	"strings"
 )
 
-
-// Funcion para leer el archivo del padron
-func LecturaDePadron(archivo string, sliceVotantes *[]votos.Votante) bool {
+func LecturaDePadron(archivo string) ([]votos.Votante,bool){
+	sliceVotantes := make([]votos.Votante, 0)
 	archivoAbierto, errorArchivo := DetectarErrorArchivo(archivo)
 	if errorArchivo != nil {
-		return false
+		return sliceVotantes,true
 	}
-	
+
 	defer archivoAbierto.Close()
 	lector := bufio.NewReader(archivoAbierto)
+
 	for {
 		linea, err := lector.ReadString('\n')
 		if err != nil {
@@ -25,14 +25,13 @@ func LecturaDePadron(archivo string, sliceVotantes *[]votos.Votante) bool {
 		linea = strings.TrimSuffix(linea, "\n")
 		dni, _ := strconv.Atoi(linea)
 		votante := votos.CrearVotante(dni)
-		*sliceVotantes = append(*sliceVotantes, votante) //Almacena uno a uno todos los DNI's
+		sliceVotantes = append(sliceVotantes, votante) //Almacena uno a uno todos los DNI's
 	}
 
-	*sliceVotantes = mergeSortVotantes(*sliceVotantes) //Ordena el slice de votantes
+	sliceVotantes = mergeSortVotantes(sliceVotantes) //Ordena el slice de votantes
 
-	return true
+	return sliceVotantes,false
 }
-
 
 
 // Funcion para leer el archivo de las boletas. Ademas crea cada Partido y los guarda en una lista enlazada.
