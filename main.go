@@ -4,41 +4,36 @@ import (
 	"fmt"
 	"os"
 	"rerepolez/errores"
+	"rerepolez/funciones"
 	"rerepolez/votos"
 	"strconv"
 	"strings"
 	"tdas/cola"
-	"rerepolez/funciones"
 )
 
 func main() {
 	params := os.Args[1:]
-	// Implementacion de un slice para guardar el padron en el.
-	sliceVotantes := make([]votos.Votante, 0)
 
 	// Implementacion de un arreglo  para guardar los partidos
-	var arregloDePartidos []votos.Partido
-
 	if funciones.DetectarErrorParametro(params, 2) {
 		return
 	}
-	
-	if !funciones.LecturaDeBoletas(params[0], &arregloDePartidos) {
+	arregloDePartidos, HayErrorEnBoletas := funciones.LecturaDeBoletas(params[0])
+	if HayErrorEnBoletas {
 		return
 	}
-	sliceVotantes,HayError:=funciones.LecturaDePadron(params[1])
-	if HayError {
+	sliceVotantes, HayErrorEnPadron := funciones.LecturaDePadron(params[1])
+	if HayErrorEnPadron {
 		return
 	}
 	contadorVotos := 0
 	votosImpugnados := 0
 	partidoEnBlanco := votos.CrearVotosEnBlanco()
 	colaVotantes := cola.CrearColaEnlazada[votos.Votante]()
-	
 	escanerInput := funciones.CrearEscaner()
 
 	for escanerInput.Scan() {
-		parametroSeparado,comando:=  funciones.ObtenerParametroComando(escanerInput)
+		parametroSeparado, comando := funciones.ObtenerParametroComando(escanerInput)
 
 		switch strings.ToLower(comando) {
 
@@ -75,3 +70,8 @@ func main() {
 	funciones.DetectarVotantesFaltantes(colaVotantes)
 	funciones.ImprimirResltador(arregloDePartidos, partidoEnBlanco, votosImpugnados)
 }
+
+/*
+Obligatorio:
+El padrón electoral tiene un formato conocido, y puede usare esta información para ordenar mejor que en tiempo
+*/

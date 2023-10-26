@@ -7,16 +7,15 @@ import (
 	"strings"
 )
 
-func LecturaDePadron(archivo string) ([]votos.Votante,bool){
+func LecturaDePadron(archivo string) ([]votos.Votante, bool) {
 	sliceVotantes := make([]votos.Votante, 0)
 	archivoAbierto, errorArchivo := DetectarErrorArchivo(archivo)
 	if errorArchivo != nil {
-		return sliceVotantes,true
+		return sliceVotantes, true
 	}
 
 	defer archivoAbierto.Close()
 	lector := bufio.NewReader(archivoAbierto)
-
 	for {
 		linea, err := lector.ReadString('\n')
 		if err != nil {
@@ -27,24 +26,21 @@ func LecturaDePadron(archivo string) ([]votos.Votante,bool){
 		votante := votos.CrearVotante(dni)
 		sliceVotantes = append(sliceVotantes, votante) //Almacena uno a uno todos los DNI's
 	}
-
 	sliceVotantes = mergeSortVotantes(sliceVotantes) //Ordena el slice de votantes
-
-	return sliceVotantes,false
+	return sliceVotantes, false
 }
 
-
 // Funcion para leer el archivo de las boletas. Ademas crea cada Partido y los guarda en una lista enlazada.
-func LecturaDeBoletas(archivo string, arregloDePartidos *[]votos.Partido) bool {
+func LecturaDeBoletas(archivo string) ([]votos.Partido, bool) {
 	archivoAbierto, errorArchivo := DetectarErrorArchivo(archivo)
-	defer archivoAbierto.Close()
+	arregloDePartidos := make([]votos.Partido, 0)
 	if errorArchivo != nil {
-		return false
+		return arregloDePartidos, true
 	}
-
+	defer archivoAbierto.Close()
 	lector := bufio.NewReader(archivoAbierto)
 	partidoNulo := votos.CrearPartido("", votos.LISTA_IMPUGNA, [votos.CANT_VOTACION]string{"", "", ""}, [votos.CANT_VOTACION]int{votos.LISTA_IMPUGNA, votos.LISTA_IMPUGNA, votos.LISTA_IMPUGNA})
-	*arregloDePartidos = append(*arregloDePartidos, partidoNulo)
+	arregloDePartidos = append(arregloDePartidos, partidoNulo)
 	contador := 1
 	for {
 		linea, err := lector.ReadString('\n')
@@ -60,7 +56,7 @@ func LecturaDeBoletas(archivo string, arregloDePartidos *[]votos.Partido) bool {
 		candidatos[votos.INTENDENTE] = strings.TrimSuffix(partidoArreglo[3], "\n")
 		partido := votos.CrearPartido(nombrePartido, contador, candidatos, [votos.CANT_VOTACION]int{0, 0, 0})
 		contador++
-		*arregloDePartidos = append(*arregloDePartidos, partido)
+		arregloDePartidos = append(arregloDePartidos, partido)
 	}
-	return true
+	return arregloDePartidos, false
 }
