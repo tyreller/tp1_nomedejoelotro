@@ -1,5 +1,6 @@
-package votos
 
+package votos
+/*
 import (
 	"rerepolez/errores"
 	"tdas/pila"
@@ -100,3 +101,4 @@ func (votante *votanteImplementacion) FinVoto() (Voto, error) {
 	votante.pilaVotos = VaciarPila(votante.pilaVotos)
 	return Voto{voto, votante.impugnado}, nil
 }
+*/
