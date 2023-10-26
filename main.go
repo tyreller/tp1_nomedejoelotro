@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
 	"os"
 	"rerepolez/errores"
@@ -35,15 +34,11 @@ func main() {
 	colaVotantes := cola.CrearColaEnlazada[votos.Votante]()
 
 	//Usamos esta forma, ya que es la que encontramos por internet. El fmt.Scan() nos estaba generando problemas con separar por ejemplo el ingresar <dni> en 2 .
-	var parametro string
+	
 	contadorVotos := 0
-	escanerInput := bufio.NewScanner(os.Stdin)
+	escanerInput := funciones.CrearEscaner()
 	for escanerInput.Scan() {
-
-		parametro = escanerInput.Text()
-		parametroSeparado := strings.Fields(parametro)
-		comando := parametroSeparado[0]
-
+		parametroSeparado,comando:=  funciones.ObtenerParametroComando(escanerInput)
 		switch strings.ToLower(comando) {
 		case "ingresar":
 			dniIngresado, _ := strconv.Atoi(parametroSeparado[1])

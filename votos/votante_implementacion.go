@@ -57,7 +57,7 @@ func (votante *votanteImplementacion) Deshacer() error {
 	return nil
 }
 
-func VaciarPilas(pilaVotos pila.Pila[[]int]) pila.Pila[[]int] {
+func VaciarPila(pilaVotos pila.Pila[[]int]) pila.Pila[[]int] {
 	for !pilaVotos.EstaVacia() {
 		pilaVotos.Desapilar()
 	}
@@ -71,8 +71,9 @@ func (votante *votanteImplementacion) FinVoto() (Voto, error) {
 		err := errores.ErrorVotanteFraudulento{dni}
 		return Voto{[CANT_VOTACION]int{0, 0, 0}, votante.impugnado}, err
 	}
+
 	if votante.impugnado {
-		votante.pilaVotos = VaciarPilas(votante.pilaVotos)
+		votante.pilaVotos = VaciarPila(votante.pilaVotos)
 		return Voto{[CANT_VOTACION]int{0, 0, 0}, votante.impugnado}, nil
 	}
 	contadorPresidente := 0
@@ -96,6 +97,6 @@ func (votante *votanteImplementacion) FinVoto() (Voto, error) {
 		}
 	}
 	votante.votoFinalizado = true
-	votante.pilaVotos = VaciarPilas(votante.pilaVotos)
+	votante.pilaVotos = VaciarPila(votante.pilaVotos)
 	return Voto{voto, votante.impugnado}, nil
 }
