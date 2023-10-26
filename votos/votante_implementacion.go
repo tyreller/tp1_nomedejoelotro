@@ -7,21 +7,23 @@ import (
 
 // Implementacion de pila para guardar los votos del votante.
 type votanteImplementacion struct {
-	dni                 int
-	votoFinalizado      bool
-	impugnado           bool
+	dni            int
+	votoFinalizado bool
+	impugnado      bool
+	//Implementamos 3 pilas asi la funcion Fin-Votar es de tiempo constante.
 	pilaVotosPresidente pila.Pila[[]int]
 	pilaVotosGobernador pila.Pila[[]int]
 	pilaVotosIntendente pila.Pila[[]int]
-	ultimoQueRealizo    []TipoVoto
+	//La Lista aQuienVoto esta pensada para cuando deshace, saber de que pila borrar el elemento.
+	listaAQuienVoto []TipoVoto
 }
 
 func CrearVotante(dni int) Votante {
 	pilaVotosPresidente := pila.CrearPilaDinamica[[]int]()
 	pilaVotosGobernador := pila.CrearPilaDinamica[[]int]()
 	pilaVotosIntendente := pila.CrearPilaDinamica[[]int]()
-	ultimoQueRealizo := []TipoVoto{}
-	return &votanteImplementacion{dni, false, false, pilaVotosPresidente, pilaVotosGobernador, pilaVotosIntendente, ultimoQueRealizo}
+	listaAQuienVoto := []TipoVoto{}
+	return &votanteImplementacion{dni, false, false, pilaVotosPresidente, pilaVotosGobernador, pilaVotosIntendente, listaAQuienVoto}
 }
 
 func (votante votanteImplementacion) LeerDNI() int {
@@ -41,13 +43,13 @@ func (votante *votanteImplementacion) Votar(tipo TipoVoto, alternativa int) erro
 	switch tipo {
 	case PRESIDENTE:
 		votante.pilaVotosPresidente.Apilar(votos)
-		votante.ultimoQueRealizo = append(votante.ultimoQueRealizo, PRESIDENTE)
+		votante.listaAQuienVoto = append(votante.listaAQuienVoto, PRESIDENTE)
 	case GOBERNADOR:
 		votante.pilaVotosGobernador.Apilar(votos)
-		votante.ultimoQueRealizo = append(votante.ultimoQueRealizo, GOBERNADOR)
+		votante.listaAQuienVoto = append(votante.listaAQuienVoto, GOBERNADOR)
 	case INTENDENTE:
 		votante.pilaVotosIntendente.Apilar(votos)
-		votante.ultimoQueRealizo = append(votante.ultimoQueRealizo, INTENDENTE)
+		votante.listaAQuienVoto = append(votante.listaAQuienVoto, INTENDENTE)
 	}
 	return nil
 }
@@ -57,13 +59,13 @@ func (votante *votanteImplementacion) Deshacer() error {
 		dni := votante.dni
 		err := errores.ErrorVotanteFraudulento{dni}
 		return err
-	} else if len(votante.ultimoQueRealizo) == 0 {
+	} else if len(votante.listaAQuienVoto) == 0 {
 		err := errores.ErrorNoHayVotosAnteriores{}
 		return err
 	}
 	var voto []int
 
-	switch votante.ultimoQueRealizo[len(votante.ultimoQueRealizo)-1] {
+	switch votante.listaAQuienVoto[len(votante.listaAQuienVoto)-1] {
 	case PRESIDENTE:
 		voto = votante.pilaVotosPresidente.Desapilar()
 	case GOBERNADOR:
@@ -72,19 +74,12 @@ func (votante *votanteImplementacion) Deshacer() error {
 		voto = votante.pilaVotosIntendente.Desapilar()
 	}
 
-	votante.ultimoQueRealizo = votante.ultimoQueRealizo[:len(votante.ultimoQueRealizo)-1]
+	votante.listaAQuienVoto = votante.listaAQuienVoto[:len(votante.listaAQuienVoto)-1]
 	alternativa := voto[1]
 	if alternativa == 0 {
 		votante.impugnado = false
 	}
 	return nil
-}
-
-func VaciarPila(pilaVotos pila.Pila[[]int]) pila.Pila[[]int] {
-	for !pilaVotos.EstaVacia() {
-		pilaVotos.Desapilar()
-	}
-	return pilaVotos
 }
 
 func (votante *votanteImplementacion) FinVoto() (Voto, error) {
@@ -96,10 +91,6 @@ func (votante *votanteImplementacion) FinVoto() (Voto, error) {
 	}
 
 	if votante.impugnado {
-		votante.pilaVotosPresidente = VaciarPila(votante.pilaVotosPresidente)
-		votante.pilaVotosGobernador = VaciarPila(votante.pilaVotosGobernador)
-		votante.pilaVotosIntendente = VaciarPila(votante.pilaVotosIntendente)
-		votante.ultimoQueRealizo = votante.ultimoQueRealizo[:0]
 		return Voto{[CANT_VOTACION]int{0, 0, 0}, votante.impugnado}, nil
 	}
 	if !votante.pilaVotosPresidente.EstaVacia() {
@@ -112,9 +103,5 @@ func (votante *votanteImplementacion) FinVoto() (Voto, error) {
 		voto[INTENDENTE] = votante.pilaVotosIntendente.Desapilar()[1]
 	}
 	votante.votoFinalizado = true
-	votante.pilaVotosPresidente = VaciarPila(votante.pilaVotosPresidente)
-	votante.pilaVotosGobernador = VaciarPila(votante.pilaVotosGobernador)
-	votante.pilaVotosIntendente = VaciarPila(votante.pilaVotosIntendente)
-	votante.ultimoQueRealizo = votante.ultimoQueRealizo[:0]
 	return Voto{voto, votante.impugnado}, nil
 }
