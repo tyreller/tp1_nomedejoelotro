@@ -9,6 +9,7 @@ import (
 
 func LecturaDePadron(archivo string) ([]votos.Votante, bool) {
 	sliceVotantes := make([]votos.Votante, 0)
+	sliceDNI := make([]int, 0)
 	archivoAbierto, errorArchivo := DetectarErrorArchivo(archivo)
 	if errorArchivo != nil {
 		return sliceVotantes, true
@@ -25,8 +26,11 @@ func LecturaDePadron(archivo string) ([]votos.Votante, bool) {
 		dni, _ := strconv.Atoi(linea)
 		votante := votos.CrearVotante(dni)
 		sliceVotantes = append(sliceVotantes, votante) //Almacena uno a uno todos los DNI's
+		sliceDNI = append(sliceDNI, dni)
 	}
-	sliceVotantes = mergeSortVotantes(sliceVotantes) //Ordena el slice de votantes
+
+	radixSortVotantes(sliceVotantes) //Ordena el slice de votantes
+
 	return sliceVotantes, false
 }
 

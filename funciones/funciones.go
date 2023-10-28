@@ -1,13 +1,22 @@
 package funciones
 
-
 import (
-	"rerepolez/votos"
-	"rerepolez/errores"
-	"tdas/cola"
 	"fmt"
-	"strings"	
+	"rerepolez/errores"
+	"rerepolez/votos"
+	"strings"
+	"tdas/cola"
 )
+
+func obtenerMaxVotante(slice []votos.Votante) int {
+	max := slice[0].LeerDNI()
+	for i := 1; i < len(slice); i++ {
+		if slice[i].LeerDNI() > max {
+			max = slice[i].LeerDNI()
+		}
+	}
+	return max
+}
 
 // Ingresa el dni válido a la cola.
 func Ingresar(dni int, sliceVotantes []votos.Votante, colaVotantes *cola.Cola[votos.Votante]) {
@@ -26,6 +35,7 @@ func Ingresar(dni int, sliceVotantes []votos.Votante, colaVotantes *cola.Cola[vo
 	fmt.Println("OK")
 
 }
+
 // Funcion de votar
 func Votar(numeroLista int, tipoVoto string, colaVotantes *cola.Cola[votos.Votante], contadorVotos *int) {
 	tipo := transformarTipoVoto(strings.ToLower(tipoVoto))
@@ -109,4 +119,3 @@ func FinVoto(votante votos.Votante, arregloDePartidos *[]votos.Partido, partidoE
 	return VotosImpugnados
 
 }
-
