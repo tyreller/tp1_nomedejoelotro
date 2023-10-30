@@ -1,12 +1,12 @@
 package funciones
 
 import (
-	"rerepolez/errores"
-	"rerepolez/votos"
-	"tdas/cola"
-	"strings"
 	"fmt"
 	"os"
+	"rerepolez/errores"
+	"rerepolez/votos"
+	"strings"
+	"tdas/cola"
 )
 
 // Detecta un error si falta parametros al comenzar
@@ -58,7 +58,6 @@ func VerificarErroresVotacion(tipoVoto string, numeroLista int, arregloDePartido
 	}
 	return true
 }
-
 
 func DetectarVotantesFaltantes(colaVotantes cola.Cola[votos.Votante]) {
 	if !colaVotantes.EstaVacia() {
