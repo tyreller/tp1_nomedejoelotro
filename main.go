@@ -22,11 +22,7 @@ func main() {
 	}
 
 	colaVotantes, partidoEnBlanco, votosImpugnados := funciones.BucleDelPrograma(arregloDePartidos, sliceVotantes)
+
 	funciones.DetectarVotantesFaltantes(colaVotantes)
 	funciones.ImprimirResltador(arregloDePartidos, partidoEnBlanco, votosImpugnados)
 }
-
-/*
-Obligatorio:
-El padrón electoral tiene un formato conocido, y puede usare esta información para ordenar mejor que en tiempo
-*/
