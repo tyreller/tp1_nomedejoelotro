@@ -39,23 +39,11 @@ func (votante *votanteImplementacion) Votar(tipo TipoVoto, alternativa int) erro
 		votante.impugnado = true
 		votante.cantidadDeImpugnaciones++
 	}
-
 	listaDeVotos := make([]int, CANT_VOTACION)
 	copy(listaDeVotos, votante.pilaVotos.VerTope())
-	switch tipo {
-	case PRESIDENTE:
-		listaDeVotos[PRESIDENTE] = alternativa
-		votante.listaAQuienVoto = append(votante.listaAQuienVoto, PRESIDENTE)
-	case GOBERNADOR:
-		listaDeVotos[GOBERNADOR] = alternativa
-		votante.listaAQuienVoto = append(votante.listaAQuienVoto, GOBERNADOR)
-	case INTENDENTE:
-		listaDeVotos[INTENDENTE] = alternativa
-		votante.listaAQuienVoto = append(votante.listaAQuienVoto, INTENDENTE)
-	}
-
+	listaDeVotos[tipo] = alternativa
+	votante.listaAQuienVoto = append(votante.listaAQuienVoto, tipo)
 	votante.pilaVotos.Apilar(listaDeVotos)
-
 	return nil
 }
 
