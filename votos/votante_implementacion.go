@@ -10,21 +10,19 @@ type votanteImplementacion struct {
 	dni            int
 	votoFinalizado bool
 	impugnado      bool
-	//Implementamos 3 pilas asi la funcion Fin-Votar es de tiempo constante.
-	pilaVotosPresidente pila.Pila[int]
-	pilaVotosGobernador pila.Pila[int]
-	pilaVotosIntendente pila.Pila[int]
+	pilaVotos      pila.Pila[[]int]
 	//La Lista aQuienVoto esta pensada para cuando deshace, saber de que pila borrar el elemento.
 	listaAQuienVoto         []TipoVoto
 	cantidadDeImpugnaciones int
 }
 
 func CrearVotante(dni int) Votante {
-	pilaVotosPresidente := pila.CrearPilaDinamica[int]()
-	pilaVotosGobernador := pila.CrearPilaDinamica[int]()
-	pilaVotosIntendente := pila.CrearPilaDinamica[int]()
+
+	pilaVotos := pila.CrearPilaDinamica[[]int]()
+	listaInicial := []int{-1, -1, -1}
+	pilaVotos.Apilar(listaInicial)
 	listaAQuienVoto := []TipoVoto{}
-	return &votanteImplementacion{dni, false, false, pilaVotosPresidente, pilaVotosGobernador, pilaVotosIntendente, listaAQuienVoto, 0}
+	return &votanteImplementacion{dni, false, false, pilaVotos, listaAQuienVoto, 0}
 }
 
 func (votante votanteImplementacion) LeerDNI() int {
@@ -41,17 +39,23 @@ func (votante *votanteImplementacion) Votar(tipo TipoVoto, alternativa int) erro
 		votante.impugnado = true
 		votante.cantidadDeImpugnaciones++
 	}
+
+	listaDeVotos := make([]int, CANT_VOTACION)
+	copy(listaDeVotos, votante.pilaVotos.VerTope())
 	switch tipo {
 	case PRESIDENTE:
-		votante.pilaVotosPresidente.Apilar(alternativa)
+		listaDeVotos[PRESIDENTE] = alternativa
 		votante.listaAQuienVoto = append(votante.listaAQuienVoto, PRESIDENTE)
 	case GOBERNADOR:
-		votante.pilaVotosGobernador.Apilar(alternativa)
+		listaDeVotos[GOBERNADOR] = alternativa
 		votante.listaAQuienVoto = append(votante.listaAQuienVoto, GOBERNADOR)
 	case INTENDENTE:
-		votante.pilaVotosIntendente.Apilar(alternativa)
+		listaDeVotos[INTENDENTE] = alternativa
 		votante.listaAQuienVoto = append(votante.listaAQuienVoto, INTENDENTE)
 	}
+
+	votante.pilaVotos.Apilar(listaDeVotos)
+
 	return nil
 }
 
@@ -64,47 +68,39 @@ func (votante *votanteImplementacion) Deshacer() error {
 		err := errores.ErrorNoHayVotosAnteriores{}
 		return err
 	}
-	var alternativa int
 
-	switch votante.listaAQuienVoto[len(votante.listaAQuienVoto)-1] {
-	case PRESIDENTE:
-		alternativa = votante.pilaVotosPresidente.Desapilar()
-	case GOBERNADOR:
-		alternativa = votante.pilaVotosGobernador.Desapilar()
-	case INTENDENTE:
-		alternativa = votante.pilaVotosIntendente.Desapilar()
-	}
+	votosDeshechos := votante.pilaVotos.Desapilar()
+
+	votosActuales := votante.pilaVotos.VerTope()
+	tipo := int(votante.listaAQuienVoto[len(votante.listaAQuienVoto)-1])
 	votante.listaAQuienVoto = votante.listaAQuienVoto[:len(votante.listaAQuienVoto)-1]
-
-	if alternativa == 0 {
+	alternativa := votosDeshechos[tipo]
+	if alternativa == 0 && votosDeshechos[tipo] != votosActuales[tipo] {
 		votante.cantidadDeImpugnaciones--
 	}
 	if votante.cantidadDeImpugnaciones == 0 {
 		votante.impugnado = false
 	}
+
 	return nil
 }
 
 func (votante *votanteImplementacion) FinVoto() (Voto, error) {
 	voto := [CANT_VOTACION]int{0, 0, 0}
+	votosDelVontante := votante.pilaVotos.VerTope()
+
 	if votante.votoFinalizado {
 		dni := votante.dni
 		err := errores.ErrorVotanteFraudulento{dni}
 		return Voto{[CANT_VOTACION]int{0, 0, 0}, votante.impugnado}, err
 	}
-
 	if votante.impugnado {
 		return Voto{[CANT_VOTACION]int{0, 0, 0}, votante.impugnado}, nil
 	}
-	if !votante.pilaVotosPresidente.EstaVacia() {
-		voto[PRESIDENTE] = votante.pilaVotosPresidente.Desapilar()
-	}
-	if !votante.pilaVotosGobernador.EstaVacia() {
-		voto[GOBERNADOR] = votante.pilaVotosGobernador.Desapilar()
-	}
-	if !votante.pilaVotosIntendente.EstaVacia() {
-		voto[INTENDENTE] = votante.pilaVotosIntendente.Desapilar()
-	}
+	voto[PRESIDENTE] = votosDelVontante[PRESIDENTE]
+	voto[GOBERNADOR] = votosDelVontante[GOBERNADOR]
+	voto[INTENDENTE] = votosDelVontante[INTENDENTE]
 	votante.votoFinalizado = true
+
 	return Voto{voto, votante.impugnado}, nil
 }

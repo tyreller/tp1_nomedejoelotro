@@ -98,13 +98,13 @@ func FinVoto(votante votos.Votante, arregloDePartidos *[]votos.Partido, partidoE
 	if voto.Impugnado {
 		VotosImpugnados++
 	}
-	todoVotoEnBlanco := [3]int{0, 0, 0}
+	todoVotoEnBlanco := [3]int{-1, -1, -1}
 	cantidadCandidatos := 3
 	if posibleError == nil && !voto.Impugnado && contadorVotos > 0 && voto.VotoPorTipo != todoVotoEnBlanco {
 
 		for i := 0; i < cantidadCandidatos; i++ {
 
-			if voto.VotoPorTipo[i] != 0 {
+			if voto.VotoPorTipo[i] != -1 {
 				(*arregloDePartidos)[voto.VotoPorTipo[i]].VotadoPara(votos.TipoVoto(i))
 			} else {
 				(*partidoEnBlanco).VotadoPara(votos.TipoVoto(i))
